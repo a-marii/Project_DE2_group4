@@ -22,7 +22,7 @@
    - name: Download git repository
      become: true
      git:
-      repo: 'https://github.com/sztoor/model_serving.git'
+      repo: 'https://github.com/a-marii/Project_DE2_group4.git'
       dest: /model_serving 
       
    - name: Change ownership of a directory
@@ -93,7 +93,8 @@
      become: true
      shell: docker compose up -d 
      args: 
-      chdir: /model_serving/ci_cd/production_server 
+      chdir: /Project_DE2_group4/ci_cd/production_server 
+
 
 - hosts: devserver
   
@@ -101,11 +102,28 @@
    - setup_var.yml
 
   tasks:
-   - name: Extra packages
-     apt: pkg=python3-pip state=latest update_cache=true  
-     become: true
+   - name: Install Python3 pip
+     apt:
+       name:
+         - python3
+         - python3-pip
+       state: latest
+       update_cache: true
+     become: true  
 
    - name: Install ML packages
      become: true
      pip: 
-      name: tensorflow==2.10.0, keras==2.10.0, numpy, future
+      name: 
+        - tensorflow==2.10.0
+        - keras==2.10.0
+        - numpy
+        - future
+        - "ray[data,train,tune,serve]"
+        - matplotlib
+        - scikit-learn
+        - pandas
+
+   - name: Run Python script
+     become: true
+     command: python3 /Project_DE2_group4/ci_cd/development_server/data_loading.py
