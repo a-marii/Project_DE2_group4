@@ -11,6 +11,7 @@ import warnings
 from ray import train 
 # Ignore all warnings
 warnings.filterwarnings('ignore')
+import pickle
 
 #SKLearn
 from sklearn.preprocessing import StandardScaler
@@ -113,6 +114,7 @@ models = [
     (train_knn, search_spaces["KNeighborsRegressor"], "KNeighborsRegressor")
 ]
 
+best_params=[]
 for train_func, search_space, model_name in models:
     print(f"Running hyperparameter tuning for {model_name}")
 
@@ -123,8 +125,20 @@ for train_func, search_space, model_name in models:
         scheduler=ASHAScheduler(metric="mean_accuracy", mode="max"),
         verbose=1
     )
-    best_config = analysis.get_best_config(metric='mean_accuracy', mode='max')
-    print(best_config)
+    best_params.append(analysis.get_best_config(metric='mean_accuracy', mode='max'))
+
+
+models_func=[RandomForestRegressor(),DecisionTreeRegressor(),LinearRegression(),SVR(), KNeighborsRegressor()]
+for idx, (train_func, search_space, model_name) in  enumerate(models):
+    model = models_func[idx]
+    model.set_params(**best_params[idx])
+    model.fit(X_train, y_train)
+    prediction = model.predict(X_test)
+    mse = mean_squared_error(y_test, prediction)
+    r2 = r2_score(y_test, prediction)
+    print(f"Model {model_name}, parameters {best_params[idx]}, R2 {r2}")
+    with open(f'{model_name}.pkl','wb') as f:
+        pickle.dump(model,f)
 
 ray.shutdown()
 

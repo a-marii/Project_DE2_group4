@@ -1,16 +1,22 @@
 - hosts: all
-  
+  vars_prompt:
+    - name: "gituser"
+      prompt: "Enter your github username"
+      private: no
+    - name: "githubpassword"
+      prompt: "Enter your github password"
+      private: yes
   tasks:
-   
+
    - name: Generate hosts file
      lineinfile: dest=/etc/hosts
                  regexp='.*{{ item }}$'
                  line="{{ hostvars[item].ansible_default_ipv4.address }} {{item}}"
-                 state=present            
+                 state=present
      when: hostvars[item].ansible_default_ipv4.address is defined
      with_items: "{{groups['all']}}"
      become: true
-     
+
    #- name: Set hostname
    #  hostname: name="{{inventory_hostname}}"
    #  become: true
@@ -22,9 +28,9 @@
    - name: Download git repository
      become: true
      git:
-      repo: 'https://github.com/a-marii/Project_DE2_group4.git'
-      dest: /model_serving 
-      
+      repo: 'https://{{ gituser }}:{{ githubpassword }}@github.com/a-marii/Project_DE2_group4.git'
+      dest: /Project_DE2_group4
+
    - name: Change ownership of a directory
      become: true
      file:
@@ -34,20 +40,21 @@
       owner: appuser
       group: appuser
 
+
 - hosts: prodserver
- 
+
   vars_files:
-   - setup_var.yml  
-  
-  tasks:  
+   - setup_var.yml
+
+  tasks:
    - name: Extra packages
-     apt: pkg={{item}} state=latest update_cache=true 
+     apt: pkg={{item}} state=latest update_cache=true
      with_items:
       - apt-transport-https
       - ca-certificates
       - curl
       - software-properties-common
-     become: true  
+     become: true
 
    - name: apt update
      apt: update_cache=yes upgrade=dist
@@ -59,14 +66,14 @@
       state: present
      become: true
 
-   - name: Add Docker repository 
+   - name: Add Docker repository
      command: add-apt-repository -y "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
      become: true
 
    - name: apt update
      apt: update_cache=yes upgrade=dist
      become: true
-  
+
    # Workaround pip issue with MTU mismatch, see: https://github.com/docker/docker.github.io/pull/9249/files
    # MTU for SNIC is 1450, Docker default is 1500. Override so that Docker matches the host.
    # We create the config file before installing, to avoid any need to restart the docker daemon.
@@ -85,19 +92,20 @@
           "mtu": 1450
         }
 
-   - name: Install Docker  
+   - name: Install Docker
      apt: pkg=docker-ce state=present update_cache=true allow_unauthenticated=yes
      become: true
 
    - name: Running containers
      become: true
-     shell: docker compose up -d 
-     args: 
-      chdir: /Project_DE2_group4/ci_cd/production_server 
+     shell: docker compose up -d
+     args:
+      chdir: /Project_DE2_group4/ci_cd/production_server
 
 
-- hosts: devserver
-  
+
+- hosts: devserver_head
+
   vars_files:
    - setup_var.yml
 
@@ -109,12 +117,12 @@
          - python3-pip
        state: latest
        update_cache: true
-     become: true  
+     become: true
 
    - name: Install ML packages
      become: true
-     pip: 
-      name: 
+     pip:
+      name:
         - tensorflow==2.10.0
         - keras==2.10.0
         - numpy
@@ -127,3 +135,50 @@
    - name: Run Python script
      become: true
      command: python3 /Project_DE2_group4/ci_cd/development_server/data_loading.py
+#   - name: Start Ray head node
+#     shell: ray start --head --port=6379
+#     become: true
+
+- hosts: devserver_worker
+
+  vars_files:
+   - setup_var.yml
+
+  tasks:
+   - name: Install Python3 pip
+     apt:
+       name:
+         - python3
+         - python3-pip
+       state: latest
+       update_cache: true
+     become: true
+
+   - name: Install ML packages
+     become: true
+     pip:
+      name:
+        - tensorflow==2.10.0
+        - keras==2.10.0
+        - numpy
+        - future
+        - "ray[data,train,tune,serve]"
+        - matplotlib
+        - scikit-learn
+        - pandas
+
+#   - name: Start Ray worker node and connect to head node
+#     shell: ray start --address=192.168.2.247:6379
+#     become: true
+
+
+#- hosts: devserver1
+#   tasks: 
+#   - name: Run Python script
+#      become: true
+#      command: python3 /Project_DE2_group4/ci_cd/development_server/params_tuning.py
+
+
+
+
+
