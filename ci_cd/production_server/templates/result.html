@@ -9,14 +9,14 @@
 <table BORDER=1>
 <thead>
 <tr>
-<th>True</th><th>Predicted</th>
+<th>Size</th><th>Has Issue</th><th>Has Downloads</th><th>Has Wiki</th><th>Predicted Stars</th><th>Original Stars</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-{% for val in range(7) %}
+{% for val in range(5) %}
 
-<td>{{final_results['y'][val]}}</td><td>{{final_results['predicted'][val]}}</td> 
+<td>{{final_results['size'][val]}}</td><td>{{final_results['has_issues'][val]}}</td><td>{{final_results['has_downloads'][val]}}</td><td>{{final_results['has_wiki'][val]}}</td><td>{{final_results['pred_stars'][val]}}</td><td>{{final_results['stars'][val]}}</td> 
 </tr>
 {% endfor %}
 </tbody>
@@ -25,3 +25,4 @@
 
 </body>
 </html>
+

@@ -1,51 +1,54 @@
 from celery import Celery
-
+from celery import Celery
+import pickle
 from numpy import loadtxt
 import numpy as np
 from tensorflow.keras.models import model_from_json
+import pandas as pd
+from sklearn.metrics import mean_squared_error, r2_score
 
-
-model_json_file = './model.json'
-model_weights_file = './model.h5'
-data_file = './pima-indians-diabetes.csv'
+#model_json_file = './model.json'
+model_weights_file = './RandomForestRegressor.pkl'
+data_file = './original_project_data.csv'
 
 def load_data():
-    dataset =  loadtxt(data_file, delimiter=',')
-    X = dataset[:,0:8]
-    y = dataset[:,8]
-    y = list(map(int, y))
-    y = np.asarray(y, dtype=np.uint8)
+    data = pd.read_csv(data_file)
+    data = data.drop(columns=[col for col in data.columns if 'url' in col])
+    data = data.drop(columns=[col for col in data.columns if data[col].dtype == 'object'])
+    data = data.replace({True: 1, False: 0})
+    data = data.drop(columns=['id', 'private', 'fork', 'disabled', 'allow_forking', 'watchers', 'forks', 'score', "watchers_count", "open_issues_count"]) 
+    label = 'stargazers_count'
+    features = data.columns.to_list()
+    features.remove('stargazers_count')
+    print("Label:", label)
+    print("Features:", features)
+    X = data[features]
+    y = data[label]
     return X, y
 
 def load_model():
-    # load json and create model
-    json_file = open(model_json_file, 'r')
-    loaded_model_json = json_file.read()
-    json_file.close()
-    loaded_model = model_from_json(loaded_model_json)
-    # load weights into new model
-    loaded_model.load_weights(model_weights_file)
-    #print("Loaded model from disk")
+    loaded_model = pickle.load(open(model_weights_file , 'rb'))
     return loaded_model
 
 # Celery configuration
-CELERY_BROKER_URL = 'amqp://rabbitmq:rabbitmq@rabbit:5672/'
-CELERY_RESULT_BACKEND = 'rpc://'
+#CELERY_BROKER_URL = 'amqp://rabbitmq:rabbitmq@rabbit:5672/'
+#CELERY_RESULT_BACKEND = 'rpc://'
 # Initialize Celery
-celery = Celery('workerA', broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
+#celery = Celery('workerA', broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
 
-@celery.task()
+#@celery.task()
 def add_nums(a, b):
-   return a + b
-
-@celery.task
+    return a + b
+    
+    #@celery.task
 def get_predictions():
-    results ={}
+    results = {}
     X, y = load_data()
     loaded_model = load_model()
-    predictions = np.round(loaded_model.predict(X)).flatten().astype(np.int32)
+    prediction =loaded_model.predict(X)
+
     results['y'] = y.tolist()
-    results['predicted'] = predictions.tolist()
+    results['predicted'] = prediction.tolist()
     #print ('results[y]:', results['y'])
     # for i in range(len(results['y'])):
         #print('%s => %d (expected %d)' % (X[i].tolist(), predictions[i], y[i]))
@@ -53,13 +56,17 @@ def get_predictions():
     #print ('results:', results)
     return results
 
-@celery.task
+#@celery.task
 def get_accuracy():
+    results ={}
     X, y = load_data()
     loaded_model = load_model()
-    loaded_model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+    prediction =loaded_model.predict(X)
+    r2 = r2_score(y, prediction)
+    X['pred_stars']=prediction
+    X['stars']=y
 
-    score = loaded_model.evaluate(X, y, verbose=0)
-    #print("%s: %.2f%%" % (loaded_model.metrics_names[1], score[1]*100))
-    return score[1]*100
+    top5=X.sort_values(by=['pred_stars']).head(5)
+    return top5.reset_index(), r2
+
 
