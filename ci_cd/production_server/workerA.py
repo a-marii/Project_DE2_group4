@@ -44,19 +44,16 @@ def add_nums(a, b):
     
 @celery.task
 def get_predictions():
-    results = {}
+    results ={}
     X, y = load_data()
     loaded_model = load_model()
     prediction =loaded_model.predict(X)
+    r2 = r2_score(y, prediction)
+    X['pred_stars']=prediction
+    X['stars']=y
 
-    results['y'] = y.tolist()
-    results['predicted'] = prediction.tolist()
-    #print ('results[y]:', results['y'])
-    # for i in range(len(results['y'])):
-        #print('%s => %d (expected %d)' % (X[i].tolist(), predictions[i], y[i]))
-        # results['predicted'].append(predictions[i].tolist()[0])
-    #print ('results:', results)
-    return results
+    top5=X.sort_values(by=['pred_stars']).head(5)
+    return top5.reset_index()
 
 @celery.task
 def get_accuracy():
@@ -69,6 +66,6 @@ def get_accuracy():
     X['stars']=y
 
     top5=X.sort_values(by=['pred_stars']).head(5)
-    return top5.reset_index(), r2
+    return r2
 
 
