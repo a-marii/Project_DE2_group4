@@ -53,7 +53,13 @@ def get_predictions():
     X['stars']=y
 
     top5=X.sort_values(by=['pred_stars']).head(5)
-    return top5.reset_index()
+    results['size'] = top5['size'].tolist() 
+    results['has_issues'] = top5['has_issues'].tolist() 
+    results['has_downloads'] = top5['has_downloads'].tolist() 
+    results['has_wiki'] = top5['has_wiki'].tolist() 
+    results['pred_stars'] = top5['pred_stars'].tolist() 
+    results['stars'] = top5['stars'].tolist()    
+    return results
 
 @celery.task
 def get_accuracy():
@@ -62,10 +68,7 @@ def get_accuracy():
     loaded_model = load_model()
     prediction =loaded_model.predict(X)
     r2 = r2_score(y, prediction)
-    X['pred_stars']=prediction
-    X['stars']=y
 
-    top5=X.sort_values(by=['pred_stars']).head(5)
     return r2
 
 

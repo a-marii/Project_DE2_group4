@@ -1,13 +1,3 @@
-from workerA import add_nums, get_accuracy, get_predictions
-
-from flask import (
-   Flask,
-   request,
-   jsonify,
-   Markup,
-   render_template 
-)
-
 #app = Flask(__name__, template_folder='./templates',static_folder='./static')
 app = Flask(__name__)
 
@@ -34,7 +24,7 @@ def predictions():
 
         results = get_accuracy.delay()
         accuracy = results.get()
-        
+
         final_results = predictions
 
         return render_template('result.html', accuracy=accuracy ,final_results= final_results) 
@@ -45,5 +35,3 @@ def predictions():
 
 if __name__ == '__main__':
     app.run(host = '0.0.0.0',port=5100,debug=True)
-
-
