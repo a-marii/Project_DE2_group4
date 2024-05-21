@@ -1,3 +1,13 @@
+from workerA import get_accuracy, get_predictions
+
+from flask import (
+   Flask,
+   request,
+   jsonify,
+   Markup,
+   render_template 
+)
+
 #app = Flask(__name__, template_folder='./templates',static_folder='./static')
 app = Flask(__name__)
 
