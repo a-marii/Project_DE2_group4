@@ -77,8 +77,8 @@ instance_dev1 = nova.servers.create(name="group4_dev1", image=image, flavor=flav
 inst_status_prod1 = instance_prod1.status
 inst_status_dev1 = instance_dev1.status
 
-instance_prod2 = nova.servers.create(name="group4_prod2", image=image, flavor=flavor, key_name='mariia_chuprina',userdata=userdata_prod1, nics=nics,security_groups=secgroups)
-instance_dev2 = nova.servers.create(name="group4_dev2", image=image, flavor=flavor, key_name='mariia_chuprina',userdata=userdata_dev1, nics=nics,security_groups=secgroups)
+instance_prod2 = nova.servers.create(name="group4_dev2", image=image, flavor=flavor, key_name='mariia_chuprina',userdata=userdata_prod1, nics=nics,security_groups=secgroups)
+instance_dev2 = nova.servers.create(name="group4_dev3", image=image, flavor=flavor, key_name='mariia_chuprina',userdata=userdata_dev1, nics=nics,security_groups=secgroups)
 inst_status_prod2 = instance_prod2.status
 inst_status_dev2 = instance_dev2.status
 print ("waiting for 10 seconds.. ")
