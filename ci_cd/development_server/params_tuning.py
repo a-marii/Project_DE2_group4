@@ -127,6 +127,7 @@ for train_func, search_space, model_name in models:
     )
     best_params.append(analysis.get_best_config(metric='mean_accuracy', mode='max'))
 
+best_acc=0
 
 models_func=[RandomForestRegressor(),DecisionTreeRegressor(),LinearRegression(),SVR(), KNeighborsRegressor()]
 for idx, (train_func, search_space, model_name) in  enumerate(models):
@@ -136,6 +137,11 @@ for idx, (train_func, search_space, model_name) in  enumerate(models):
     prediction = model.predict(X_test)
     mse = mean_squared_error(y_test, prediction)
     r2 = r2_score(y_test, prediction)
+    if r2>best_acc:
+        best_acc=r2
+        with open('best_model.pkl','wb') as f:
+            pickle.dump(model,f)
+
     print(f"Model {model_name}, parameters {best_params[idx]}, R2 {r2}")
     with open(f'{model_name}.pkl','wb') as f:
         pickle.dump(model,f)

@@ -8,7 +8,7 @@ import pandas as pd
 from sklearn.metrics import mean_squared_error, r2_score
 
 #model_json_file = './model.json'
-model_weights_file = './RandomForestRegressor.pkl'
+model_weights_file = './best_model.pkl'
 data_file = './original_project_data.csv'
 
 def load_data():
